@@ -1,1 +1,109 @@
-this is a test html
+Appium+Python入门学习总结
+
+最近研究了一下Appium，查看了一些大神的博客，绕过了一些坑，现将从搭建环境到运行真机测试的流程总结如下：
+
+一、搭建环境，这里我参考了虫师的博客，一步一步来，搭好了Appium的环境，如果需要真机测试，android模拟器及以后的部分不用安装，链接如下：
+
+http://www.cnblogs.com/fnng/p/4540731.html
+
+http://www.cnblogs.com/fnng/p/4552438.html
+
+注：以上的东西做完之后，需要在环境变量中添加（安装路径）C:\Program Files (x86)\Appium\node_modules\.bin到path中，再在cmd中运行appium-doctor，检查环境显示成功之后，则完成了环境搭建
+
+
+
+ 
+
+二、环境搭建好之后，需要连接手机
+
+连接手机时除了用数据线连到电脑上，还要注意选择手机的开发者模式，之后，在cmd中运行adb devices，如果下发列表中出现设备，则说明连接成功，那一串奇怪的字符就是你的设备号了
+
+
+
+三、用Appium启动服务，启动服务的作用就是能让代码在连接的机器上运行，其实用cmd代码运行appium，也能启动，只不过appium这个程序（上方虫师教程中安装的Appiumforwindows）可以比较方便的对服务进行调试，所以选择用它来启动
+
+
+
+启动前需要对服务进行设置，点击左上角的安卓小图标，进行主要的配置：
+
+
+
+ 
+
+并且将服务的session配置成可重写（非必要的配置）
+
+
+
+到这里服务就配置好了，点击右上角的三角进行开启即可
+
+ 
+
+四、配置下载python中的appium组件
+
+这里很简单，cmd运行  pip install Appium-Python-Client 等待安装完成即可
+
+ 
+
+五、Appium测试用例代码，以百度安装包为例：
+
+from appium import webdriver
+import time
+
+desired_caps = {
+                'platformName': 'Android',
+                'deviceName': '91QECPF5US7G',
+                'platformVersion': '5.1',
+　　　　　　　　　#将要测试app的安装包放到自己电脑上执行安装或启动，
+                如果不是从安装开始，则不是必填项，可以由下面红色的两句直接启动
+                'app':'C:\\Users\\shuchengxiang\\Desktop\\shoujibaidu_25580288.apk',
+                'appPackage': 'com.baidu.searchbox', #红色部分如何获取下面讲解
+                'appActivity': 'MainActivity',
+                'unicodeKeyboard': True, #此两行是为了解决字符输入不正确的问题
+                'resetKeyboard': True    #运行完成后重置软键盘的状态　　
+}
+
+driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
+driver.find_element_by_id("com.baidu.searchbox:id/baidu_searchbox").click()
+driver.find_element_by_id("com.baidu.searchbox:id/SearchTextInput").clear()
+driver.find_element_by_id("com.baidu.searchbox:id/SearchTextInput").send_keys('appium测试')
+
+driver.find_element_by_id("float_search_or_cancel").click()
+driver.find_element_by_id("floating_action_button").click()
+
+driver.quit()
+
+获取appPackage和appActivity:
+1、在之前配置的android SDK文件中找到这个程序，并双击打开
+
+
+在连好手机的情况下点击这个按钮，界面上就会显示出当前手机的页面（如果是锁屏状态则显示黑屏）
+
+
+
+
+
+界面加载出来之后，加入我们想定位百度一下的文本框，那么吧光标移动到上面点击一下即可，下图框出的部分为我们需要的信息：
+
+
+
+通过这个信息我们知道，对于这个包，上方desired_caps字典中appPackage的值应填写为 com.baidu.search
+
+而代码中的定位部分的id为com.baidu.searchbox:id/baidu_searchbox，或填写baidu_searchbox
+
+例：driver.find_element_by_id("com.baidu.searchbox:id/baidu_searchbox").click()
+
+ 
+
+2、appActivity的获取：
+
+先让百度在手机中运行起来，然后在cmd中输入：adb shell dumpsys activity activities （获取当前所有的活动），搜索结果如下：
+
+
+
+ 上方将所有进程显示出来，活动进程很多比较难找，这里知道package名称，可以在结果中进行查找，得到appActivity的值为MainActivity
+
+关于这里的定位还有其他方法，详情参看大神的博客：http://blog.csdn.net/shyu1989/article/details/51730214
+
+ 
+
+到这里，上边代码需要的所有内容就已经填写完了，Appium服务启动成功之后，运行代码，即可看到效果（手机不要锁屏哦）
